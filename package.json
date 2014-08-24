@@ -1,0 +1,26 @@
+{
+  "name": "hdrloader",
+  "description": "simple hdr loader in node.js",
+  "version": "0.0.0",
+  "homepage": "https://github.com/kloertm",
+  "main": "hdrloader.js",
+  "scripts": {
+    "test": "mocha test/*.js"
+  },
+  "keywords": [
+    "hdr",
+    "tone mapping"
+  ],
+  "author": "kloertm",
+  "contributors": [],
+  "dependencies": {
+    "bindings": "^1.2.1",
+    "nan": "^1.3.0",
+    "node-gyp": "^0.13.1",
+	"convnetjs": "^0.3.0"
+  },
+  "devDependencies": {
+    "mocha": "^1.21.4",
+    "should": "^4.0.4"
+  }
+}
