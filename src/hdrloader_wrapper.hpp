@@ -47,7 +47,7 @@ class hdrloader : public node::ObjectWrap {
 	if (args.Length() < 1) {
 		v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
 		return scope.Close(v8::Undefined());
-    }
+	}
 	else {
 		v8::String::Utf8Value filename(args[0]->ToString());
 		path = std::string(*filename);
@@ -63,8 +63,16 @@ class hdrloader : public node::ObjectWrap {
 	{
 		result << "hdrloader ok" << " (width: " << hdr_result.width << ", height: " << hdr_result.height;
 	}
-
-    NanReturnValue(NanNew(result.str().c_str()));
+	
+	size_t length = sizeof(float) * 100;
+	v8::Local<v8::Object> floating_buff = NanNewBufferHandle(length);
+	float* data = (float *) malloc(length);
+	for (int i = 0 ; i < length / sizeof(float) ; ++i)
+	{
+	  data[i] = 2.0f + i;
+	}
+	memcpy(node::Buffer::Data(floating_buff), data, length);
+	NanReturnValue(floating_buff);
   }
 
  private:
@@ -93,7 +101,6 @@ class hdrloader : public node::ObjectWrap {
   }
 
   static v8::Persistent<v8::Function> constructor;
-
  private:
   bool null_;
 };

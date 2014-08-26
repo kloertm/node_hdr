@@ -11,7 +11,12 @@ layer_defs.push({type:'pool', sx:2, stride:2});
 layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
 layer_defs.push({type:'softmax', num_classes:10});
 
-var hdr = module.exports.hdrloader();
-console.log(hdr.loadHDR('C:\\flower.hdr'));
+var hdr_loader = module.exports.hdrloader();
+var hdr_data = hdr_loader.loadHDR('C:\\flower.hdr');
+
+console.log(hdr_data.length);
+// return;
+for (counter = 0 ; counter < hdr_data.length / 4 ; ++counter)
+  console.log(counter + " : " + hdr_data.readFloatLE(counter * 4));
 
 // TODO : Proceed with deep learning.
