@@ -55,24 +55,35 @@ class hdrloader : public node::ObjectWrap {
 
 	HDRLoaderResult hdr_result;
 	bool ret = HDRLoader::load(path.c_str(), hdr_result);
-	if (!ret)
-	{
-		result << "hdrloader failed";
-	}
-	else
-	{
-		result << "hdrloader ok" << " (width: " << hdr_result.width << ", height: " << hdr_result.height;
+	size_t hdr_buff_len = 0;
+	size_t hdr_meta_len = sizeof(int) * 2;
+	size_t hdr_total_data_len = 0;
+	int hdr_width = 0;
+	int hdr_height = 0;
+	v8::Local<v8::Object> hdr_buff;
+	char* temp_buff;
+	if (ret) {
+	    hdr_width = hdr_result.width;
+	    hdr_height = hdr_result.height;
+	    hdr_buff_len = sizeof(float) * hdr_width * hdr_height;
 	}
 	
-	size_t length = sizeof(float) * 100;
-	v8::Local<v8::Object> floating_buff = NanNewBufferHandle(length);
-	float* data = (float *) malloc(length);
-	for (int i = 0 ; i < length / sizeof(float) ; ++i)
-	{
-	  data[i] = 2.0f + i;
+	hdr_buff_len = sizeof(float) * hdr_width * hdr_height;
+	hdr_total_data_len = hdr_buff_len + hdr_meta_len;
+	hdr_buff = NanNewBufferHandle(hdr_total_data_len);
+	temp_buff = (char *) malloc(hdr_total_data_len);
+	memcpy(temp_buff, (char *) &hdr_width, sizeof(int));
+	memcpy(temp_buff + sizeof(int), (char *) &hdr_height, sizeof(int));
+	if (hdr_buff_len > 0)
+	  memcpy(temp_buff + sizeof(int) * 2, (char *) &(hdr_result.cols), hdr_buff_len);
+	memcpy(node::Buffer::Data(hdr_buff), (char *) temp_buff, hdr_total_data_len);
+	free(temp_buff);
+	if (hdr_buff_len > 0) {
+	  delete[] hdr_result.expos;
+	  delete[] hdr_result.cols;
 	}
-	memcpy(node::Buffer::Data(floating_buff), data, length);
-	NanReturnValue(floating_buff);
+	
+	NanReturnValue(hdr_buff);
   }
 
  private:
