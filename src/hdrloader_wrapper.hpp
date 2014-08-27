@@ -47,8 +47,8 @@ class hdrloader : public node::ObjectWrap {
 	int dest_width = 0;
 	int dest_height = 0;
 	if (args.Length() < 3) {
-		v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
-		return scope.Close(v8::Undefined());
+		NanThrowError("Wrong number of arguments");
+		NanReturnUndefined();
 	}
 	else {
 		v8::String::Utf8Value filename(args[0]->ToString());
