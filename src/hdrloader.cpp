@@ -26,11 +26,6 @@ static void workOnRGBE(RGBE *scan, int len, float *cols, int *expos);
 static bool decrunch(RGBE *scanline, int len, FILE *file);
 static bool oldDecrunch(RGBE *scanline, int len, FILE *file);
 
-inline unsigned char saturate(float x)
-{
-	return x > 255.0f ? 255 : x < 0.0f ? 0 : unsigned char(x);
-}
-
 bool HDRLoader::load(const char *fileName, HDRLoaderResult &res, int dest_width, int dest_height)
 {
 	int i;
