@@ -44,17 +44,23 @@ class hdrloader : public node::ObjectWrap {
 
 	std::ostringstream result;
 	std::string path;
-	if (args.Length() < 1) {
+	int dest_width = 0;
+	int dest_height = 0;
+	if (args.Length() < 3) {
 		v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
 		return scope.Close(v8::Undefined());
 	}
 	else {
 		v8::String::Utf8Value filename(args[0]->ToString());
+		v8::Local<v8::Integer> dest_w = args[1]->ToUint32();
+		v8::Local<v8::Integer> dest_h = args[2]->ToUint32();
 		path = std::string(*filename);
+		dest_width = dest_w->Value();
+		dest_height = dest_h->Value();
 	}
 
 	HDRLoaderResult hdr_result;
-	bool ret = HDRLoader::load(path.c_str(), hdr_result);
+	bool ret = HDRLoader::load(path.c_str(), hdr_result, dest_width, dest_height);
 	size_t hdr_buff_len = 0;
 	size_t hdr_meta_len = sizeof(int) * 2;
 	size_t hdr_total_data_len = 0;
@@ -65,18 +71,19 @@ class hdrloader : public node::ObjectWrap {
 	if (ret) {
 	    hdr_width = hdr_result.width;
 	    hdr_height = hdr_result.height;
-	    hdr_buff_len = sizeof(float) * hdr_width * hdr_height;
+	    hdr_buff_len = sizeof(float) * hdr_width * hdr_height * 3;
 	}
-	
-	hdr_buff_len = sizeof(float) * hdr_width * hdr_height;
+
 	hdr_total_data_len = hdr_buff_len + hdr_meta_len;
 	hdr_buff = NanNewBufferHandle(hdr_total_data_len);
 	temp_buff = (char *) malloc(hdr_total_data_len);
 	memcpy(temp_buff, (char *) &hdr_width, sizeof(int));
 	memcpy(temp_buff + sizeof(int), (char *) &hdr_height, sizeof(int));
 	if (hdr_buff_len > 0)
-	  memcpy(temp_buff + sizeof(int) * 2, (char *) &(hdr_result.cols), hdr_buff_len);
-	memcpy(node::Buffer::Data(hdr_buff), (char *) temp_buff, hdr_total_data_len);
+	  memcpy(temp_buff + sizeof(int) * 2, (void *) hdr_result.cols, hdr_buff_len);
+	memcpy(node::Buffer::Data(hdr_buff), (void *) temp_buff, hdr_total_data_len);
+	
+	// free
 	free(temp_buff);
 	if (hdr_buff_len > 0) {
 	  delete[] hdr_result.expos;
@@ -91,8 +98,6 @@ class hdrloader : public node::ObjectWrap {
   hdrloader() {
   }
   ~hdrloader() {
-	// delete[] result.cols;
-	// delete[] result.expos;
   }
 
   static NAN_METHOD(New) {

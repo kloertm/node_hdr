@@ -20,7 +20,7 @@ public:
 
 class HDRLoader {
 public:
-	static bool load(const char *fileName, HDRLoaderResult &res);
+	static bool load(const char *fileName, HDRLoaderResult &res, int dest_width, int dest_height);
 };
 
 #endif

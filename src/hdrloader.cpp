@@ -26,7 +26,12 @@ static void workOnRGBE(RGBE *scan, int len, float *cols, int *expos);
 static bool decrunch(RGBE *scanline, int len, FILE *file);
 static bool oldDecrunch(RGBE *scanline, int len, FILE *file);
 
-bool HDRLoader::load(const char *fileName, HDRLoaderResult &res)
+inline unsigned char saturate(float x)
+{
+	return x > 255.0f ? 255 : x < 0.0f ? 0 : unsigned char(x);
+}
+
+bool HDRLoader::load(const char *fileName, HDRLoaderResult &res, int dest_width, int dest_height)
 {
 	int i;
 	char str[200];
@@ -95,10 +100,58 @@ bool HDRLoader::load(const char *fileName, HDRLoaderResult &res)
 
 	delete [] scanline;
 	fclose(file);
+	
+	// resize if needed
+	if (dest_width > 0 && dest_height > 0)
+	{
+		float *resized_cols = new float[dest_width * dest_height * 3];
+		const float tx = dest_width / float(w);
+		const float ty = dest_height / float(h);
+		
+		for (int j = 0 ; j < dest_height ; ++j)
+		{
+			for (int i = 0 ; i < dest_width ; ++i)
+			{
+				for (int k = 0 ; k < 3 ; ++k)
+				{
+					float xa = float(i) / tx;
+					float xb = xa + 1.0f;
+					float xc = xa;
+					float xd = xa + 1.0f;
+					float ya = float(j) / ty;
+					float yb = ya;
+					float yc = ya + 1.0f;
+					float yd = ya + 1.0f;
+					
+					if (xb >= w) xb--;
+					if (xd >= w) xd--;
+					if (yc >= h) yc--;
+					if (yd >= h) yd--;
+					float alpha = float(i) / tx - xa;
+					float beta = float(j) / ty - ya;
+					float pa = res.cols[int((ya * w + xa) * 3 + k)];
+					float pb = res.cols[int((yb * w + xb) * 3 + k)];
+					float pc = res.cols[int((yc * w + xc) * 3 + k)];
+					float pd = res.cols[int((yd * w + xd) * 3 + k)];
+					float out = (1.0f - alpha) * (1.0f - beta) * pa +
+						alpha * (1.0f - beta) * pb +
+						(1.0f - alpha) * beta * pc +
+						alpha * beta * pd + 0.5f;
+					resized_cols[int((j * dest_height + i) * 3 + k)] = out;
+				}
+			}
+		}
+		
+		// Free up previous resource
+		delete[] res.cols;
+		res.cols = resized_cols;
+		res.width = dest_width;
+		res.height = dest_height;
+	}
 
 	return true;
 }
-
+  
 float convertComponent(int expo, int val)
 {
 	float v = val / 256.0f;

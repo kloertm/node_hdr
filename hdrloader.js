@@ -6,15 +6,12 @@ var convnetjs = require("convnetjs");
 
 function readHDR(hdr_path) {
   var hdr_loader = module.exports.hdrloader();
-  var hdr_data = hdr_loader.loadHDR(hdr_path);
+  var hdr_data = hdr_loader.loadHDR(hdr_path, 256, 256);
   var hdr_width = hdr_data.readInt32LE(0);
   var hdr_height = hdr_data.readInt32LE(4);
   var hdr_buff = [];
   
-  console.log(hdr_width);
-  console.log(hdr_height);
-  
-  for (i = 0 ; i < hdr_width * hdr_height ; ++i) {
+  for (i = 0 ; i < hdr_width * hdr_height * 3 ; ++i) {
     hdr_buff.push(hdr_data.readFloatLE(8 + 4 * i));
   }
   return [hdr_width, hdr_height, hdr_buff];
