@@ -131,7 +131,7 @@ bool HDRLoader::load(const char *fileName, HDRLoaderResult &res, int dest_width,
 					float out = (1.0f - alpha) * (1.0f - beta) * pa +
 						alpha * (1.0f - beta) * pb +
 						(1.0f - alpha) * beta * pc +
-						alpha * beta * pd + 0.5f;
+						alpha * beta * pd;
 					resized_cols[int((j * dest_height + i) * 3 + k)] = out;
 				}
 			}
