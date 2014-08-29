@@ -30,7 +30,7 @@ layer_defs.push({type:'softmax', num_classes:10});
 var net = new convnetjs.Net();
 net.makeLayers(layer_defs);
 
-var myHDR = readHDR('flower.hdr');
+var myHDR = readHDR('belgium.hdr');
 console.log(myHDR);
 
 // TODO : Proceed with deep learning.
