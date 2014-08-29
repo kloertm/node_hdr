@@ -3,6 +3,7 @@ module.exports = require('bindings')({
   bindings: 'hdrloader'
 });
 var convnetjs = require("convnetjs");
+var fs = require('fs');
 
 var train_kernel_width = 256;
 var train_kernel_height = 256;
@@ -19,6 +20,25 @@ function readHDR(hdr_path) {
     hdr_buff.push(hdr_data.readFloatLE(8 + 4 * i));
   }
   return [hdr_width, hdr_height, hdr_buff];
+}
+
+function getHDRs(hdr_dir, recursive) {
+  var results = []
+  var list = fs.readdirSync(hdr_dir);
+  
+  list.forEach(function(file) {
+      var filename = hdr_dir + '/' + file;
+      var stat = fs.statSync(file);
+      if (stat && stat.isDirectory()) {
+	if (recursive)
+	  results = results.concat(getHDRs(file));
+      } else {
+	var last_dot_index = filename.lastIndexOf('.');
+	if (filename.substr(last_dot_index) == ".hdr")
+	  results.push(file);
+      }
+  })
+  return results;
 }
 	
 var layer_defs = [];
