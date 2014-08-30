@@ -47,7 +47,7 @@ function getHDRs(hdr_dir, recursive) {
   
   list.forEach(function(file) {
       var filename = hdr_dir + '/' + file;
-      var stat = fs.statSync(file);
+      var stat = fs.statSync(filename);
       if (stat && stat.isDirectory()) {
 	if (recursive)
 	  results = results.concat(getHDRs(file));
