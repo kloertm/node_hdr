@@ -10,6 +10,21 @@ var train_kernel_width = 128;
 var train_kernel_height = 128;
 var train_kernel_channel = 3;
 
+function getParameter(param_file, hdr_name) {
+  fs = require('fs');
+  
+  var data = fs.readFileSync(param_file, 'utf8');
+  var data_in_line = data.split("\n");
+  for (var line_index in data_in_line) {
+    if (data_in_line[line_index].indexOf(hdr_name) > -1) {
+      var params = data_in_line[line_index].split(" ");
+      return { 'bias': parseFloat(params[2]), 'exposure': parseFloat(params[3]), 'gamma': parseFloat(params[4]) };
+    }
+  }
+  
+  return undefined;
+}
+
 function readHDR(hdr_path) {
   var hdr_loader = module.exports.hdrloader();
   var hdr_data = hdr_loader.loadHDR(hdr_path, train_kernel_width, train_kernel_height);
@@ -67,7 +82,7 @@ function makeDataset(hdr_dir) {
     var x = fillVol(hdr_file_loaded.data);
     var y = parseFloat(10.0); // TODO : fix me
     data.push(x);
-    labels.push(y);
+    labels.push([y]);
     console.log(hdr_file_name + ' has been processed.');
   }
   
@@ -85,7 +100,7 @@ function trainHDRs(hdr_dir) {
   var avloss = 0.0;
   for (var iteration = 0 ; iteration < train_iteration ; iteration++) {
     for (var data_set_index in dataset.data) {
-        var stats = trainer.train(dataset.data[data_set_index], dataset.labels);
+        var stats = trainer.train(dataset.data[data_set_index], dataset.labels[data_set_index]);
     }
   }
   console.log('training process done.');
@@ -100,6 +115,7 @@ function testHDRs(hdr_dir, trained_net) {
   }
 }
 
+// console.log(getParameter('./Drago-Parameter-Exp-Bias-Gamma.txt', 'Lab'));
 var test_dir = '.';
 var trained_net = trainHDRs(test_dir);
 testHDRs(test_dir, trained_net);
