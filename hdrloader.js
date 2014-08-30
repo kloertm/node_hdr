@@ -6,8 +6,8 @@ var convnetjs = require("convnetjs");
 var fs = require('fs');
 
 var train_iteration = 64;
-var train_kernel_width = 128;
-var train_kernel_height = 128;
+var train_kernel_width = 256;
+var train_kernel_height = 256;
 var train_kernel_channel = 3;
 
 var test_dir = '.';
@@ -63,7 +63,7 @@ function getHDRs(hdr_dir, recursive) {
 function generateNet() {
   var layer_defs = [];
   layer_defs.push({type:'input', out_sx:train_kernel_width, out_sy:train_kernel_height, out_depth:train_kernel_channel});
-  layer_defs.push({type:'fc', num_neurons:5, activation:'sigmoid'});
+  layer_defs.push({type:'fc', num_neurons:64, activation:'sigmoid'});
   layer_defs.push({type:'regression', num_neurons:1});
   var net = new convnetjs.Net();
   net.makeLayers(layer_defs);
@@ -79,6 +79,7 @@ function makeDataset(hdr_dir) {
   var training_list = getHDRs(hdr_dir, false);
   var data = [];
   var labels = [];
+  var filename = [];
   for (var hdr_file_index in training_list) {
     var hdr_file_name = training_list[hdr_file_index];
     var hdr_file_loaded = readHDR(hdr_file_name.path);
@@ -91,13 +92,15 @@ function makeDataset(hdr_dir) {
     var y = params.exposure;
     data.push(x);
     labels.push([y]);
-    console.log(hdr_file_name.filename + ' has been processed.');
+    filename.push(hdr_file_name.filename);
+    console.log(hdr_file_name.filename + ' loaded.');
   }
   
   // prepare the dataset
   var dataset = {};
   dataset.data = data;
   dataset.labels = labels;
+  dataset.filename = filename;
   return dataset;
 }
 
@@ -107,6 +110,7 @@ function trainHDRs(hdr_dir) {
   var dataset = makeDataset(hdr_dir);
   var avloss = 0.0;
   for (var iteration = 0 ; iteration < train_iteration ; iteration++) {
+    console.log('training iteration : ' + iteration);
     for (var data_set_index in dataset.data) {
         var stats = trainer.train(dataset.data[data_set_index], dataset.labels[data_set_index]);
     }
@@ -119,7 +123,10 @@ function testHDRs(hdr_dir, trained_net) {
   var dataset = makeDataset(hdr_dir);
   for (var data_set_index in dataset.data) {
     var prediction = trained_net.forward(dataset.data[data_set_index]);
-    console.log('prediction is : ' + prediction.w[0]);
+    var predicted_value = prediction.w[0];
+    var real_value = getParameter(dataset.filename[data_set_index]).exposure;
+    var error = real_value - predicted_value;
+    console.log(dataset.filename[data_set_index] + ' -> prediction is : ' + predicted_value + ', error is : ' + error);
   }
 }
 
