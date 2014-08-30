@@ -123,6 +123,5 @@ function testHDRs(hdr_dir, trained_net) {
   }
 }
 
-// console.log(getParameter('./Drago-Parameter-Exp-Bias-Gamma.txt', 'Lab'));
 var trained_net = trainHDRs(test_dir);
 testHDRs(test_dir, trained_net);
