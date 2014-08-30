@@ -10,7 +10,10 @@ var train_kernel_width = 128;
 var train_kernel_height = 128;
 var train_kernel_channel = 3;
 
-function getParameter(param_file, hdr_name) {
+var test_dir = '.';
+var param_file = './Drago-Parameter-Exp-Bias-Gamma.txt';
+
+function getParameter(hdr_name) {
   fs = require('fs');
   
   var data = fs.readFileSync(param_file, 'utf8');
@@ -51,7 +54,7 @@ function getHDRs(hdr_dir, recursive) {
       } else {
 	var last_dot_index = filename.lastIndexOf('.');
 	if (filename.substr(last_dot_index) == ".hdr")
-	  results.push(filename);
+	  results.push({'path': filename, 'filename': file});
       }
   })
   return results;
@@ -78,12 +81,17 @@ function makeDataset(hdr_dir) {
   var labels = [];
   for (var hdr_file_index in training_list) {
     var hdr_file_name = training_list[hdr_file_index];
-    var hdr_file_loaded = readHDR(hdr_file_name);
+    var hdr_file_loaded = readHDR(hdr_file_name.path);
+    
+    var params = getParameter(hdr_file_name.filename);
+    if (params == undefined)
+      continue;
+    
     var x = fillVol(hdr_file_loaded.data);
-    var y = parseFloat(10.0); // TODO : fix me
+    var y = params.exposure;
     data.push(x);
     labels.push([y]);
-    console.log(hdr_file_name + ' has been processed.');
+    console.log(hdr_file_name.filename + ' has been processed.');
   }
   
   // prepare the dataset
@@ -116,6 +124,5 @@ function testHDRs(hdr_dir, trained_net) {
 }
 
 // console.log(getParameter('./Drago-Parameter-Exp-Bias-Gamma.txt', 'Lab'));
-var test_dir = '.';
 var trained_net = trainHDRs(test_dir);
 testHDRs(test_dir, trained_net);
