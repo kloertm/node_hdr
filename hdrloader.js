@@ -5,10 +5,10 @@ module.exports = require('bindings')({
 var convnetjs = require("convnetjs");
 var fs = require('fs');
 
-var train_iteration = 300;
-var train_kernel_width = 1;
-var train_kernel_height = 1;
-var train_kernel_channel = 2;
+var train_iteration = 32;
+var train_kernel_width = 128;
+var train_kernel_height = 128;
+var train_kernel_channel = 3;
 
 function readHDR(hdr_path) {
   var hdr_loader = module.exports.hdrloader();
@@ -44,17 +44,16 @@ function getHDRs(hdr_dir, recursive) {
 
 function generateNet(kernel_width, kernel_height, kernel_channel) {
   var layer_defs = [];
-  layer_defs.push({type:'input', out_sx:train_kernel_width, out_sy:kernel_height, out_depth:kernel_channel});
-  layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
+  layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:kernel_width*kernel_height*kernel_channel});
+  layer_defs.push({type:'fc', num_neurons:5, activation:'sigmoid'});
   layer_defs.push({type:'regression', num_neurons:1});
   var net = new convnetjs.Net();
   net.makeLayers(layer_defs);
   return net;
 }
 
-function fillVol(raw_data, kernel_width, kernel_height, kernel_channel) {
-   var vol = new convnetjs.Vol(kernel_width, kernel_height, kernel_channel, 0.0);
-   vol.w = raw_data;
+function fillVol(raw_data) {
+   var vol = new convnetjs.Vol(raw_data);
    return vol;
 }
 
@@ -65,8 +64,8 @@ function makeDataset(hdr_dir, kernel_width, kernel_height, kernel_channel) {
   for (var hdr_file_index in training_list) {
     var hdr_file_name = training_list[hdr_file_index];
     var hdr_file_loaded = readHDR(hdr_file_name);
-    var x = fillVol(hdr_file_loaded.data, kernel_width, kernel_height, kernel_channel);
-    var y = parseFloat(100.0); // TODO : fix me
+    var x = fillVol(hdr_file_loaded.data);
+    var y = parseFloat(10.0); // TODO : fix me
     data.push(x);
     labels.push(y);
     console.log(hdr_file_name + ' has been processed.');
@@ -81,21 +80,22 @@ function makeDataset(hdr_dir, kernel_width, kernel_height, kernel_channel) {
 
 function trainHDRs(hdr_dir) {
   var net = generateNet(train_kernel_width, train_kernel_height, train_kernel_channel);
-  var trainer = new convnetjs.SGDTrainer(net, {learning_rate:0.01, momentum:0.0, batch_size:1, l2_decay:0.001});
+  var trainer = new convnetjs.Trainer(net, {method: 'sgd', learning_rate: 0.01, l2_decay: 0.001, momentum: 0.9, batch_size: 1, l1_decay: 0.001});
   var dataset = makeDataset(hdr_dir, train_kernel_width, train_kernel_height, train_kernel_channel);
+  var avloss = 0.0;
   for (var iteration = 0 ; iteration < train_iteration ; iteration++) {
     for (var data_set_index in dataset.data) {
-        var m = trainer.train(dataset.data[data_set_index], dataset.labels[data_set_index]);
+        var stats = trainer.train(dataset.data[data_set_index], dataset.labels);
     }
   }
   console.log('training process done.');
   return net;
 }
 
-function testHDRs(hdr_dir, net) {
+function testHDRs(hdr_dir, trained_net) {
   var dataset = makeDataset(hdr_dir, train_kernel_width, train_kernel_height, train_kernel_channel);
   for (var data_set_index in dataset.data) {
-    var prediction = net.forward(dataset.data[data_set_index]);
+    var prediction = trained_net.forward(dataset.data[data_set_index]);
     console.log('prediction is : ' + prediction.w[0]);
   }
 }
